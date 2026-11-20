@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<!--
+  THE JOURNEY ARCHIVE — about.html
+  A longer, personal introduction to the student, learner, traveller and explorer.
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#07090a">
+    <meta name="description" content="About the student, aspiring web developer and traveller behind The Journey Archive.">
+    <title>About Me | THE JOURNEY ARCHIVE</title>
+    <script>
+        document.documentElement.classList.add("js");
+        /* Failsafe: never leave the loading screen visible if script.js cannot load. */
+        window.setTimeout(function () {
+            var loader = document.getElementById("loader");
+            if (loader) loader.classList.add("is-hidden");
+            if (document.body) document.body.classList.add("is-loaded");
+        }, 2200);
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <noscript><style>#loader{display:none!important}</style></noscript>
+    <script src="js/script.js" defer></script>
+</head>
+<body data-page="about">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="loading-screen" id="loader" aria-hidden="true">
+        <div class="loader-inner"><div class="loader-mark"></div><p class="loader-title">THE JOURNEY ARCHIVE</p><p class="loader-subtitle">A PERSONAL TRAVEL ARCHIVE</p><div class="loader-line"><span></span></div></div>
+    </div>
+    <header id="site-nav"></header>
+
+    <main id="main-content">
+        <section class="page-hero" data-watermark="ABOUT" aria-labelledby="page-title">
+            <div class="container-xxl page-hero-inner">
+                <nav class="breadcrumb-custom" aria-label="Breadcrumb"><a href="index.html">Home</a><span>/</span><span>About</span></nav>
+                <p class="eyebrow load-reveal" style="--load-delay:.1s">The person behind the photographs</p>
+                <h1 class="load-reveal" id="page-title" style="--load-delay:.18s">A <em>curious</em><br>mind, always<br>on the move.</h1>
+                <p class="load-reveal" style="--load-delay:.28s">I'm a student, an aspiring web developer and a traveller who likes the quiet details as much as the famous views.</p>
+                <div class="page-hero-meta"><span>Student</span><span>Learning Web Development</span><span>Traveller</span><span>Explorer</span><span>Photography</span></div>
+            </div>
+        </section>
+
+        <section class="section-pad" aria-labelledby="about-story-title">
+            <div class="container-xxl about-layout">
+                <div class="about-photo-composition" data-reveal>
+                    <div class="about-photo-frame" aria-hidden="true"></div>
+                    <div class="about-photo-main">
+                        <!-- Replace this with your own About portrait: images/profile/about.jpg -->
+                        <img src="images/profile/about.jpg" data-local="images/profile/about.jpg"
+                             data-remote="https://images.pexels.com/photos/39876323/pexels-photo-39876323.jpeg?auto=compress&amp;cs=tinysrgb&amp;fit=crop&amp;w=900&amp;h=1200"
+                             data-label="Arafat Rahman" data-palette="default"
+                             alt="Portrait placeholder for Arafat Rahman in the About section" loading="eager" fetchpriority="high">
+                    </div>
+                    <span class="about-photo-label"><span data-site-name>Arafat Rahman</span></span>
+                </div>
+                <div class="about-copy" data-reveal style="--reveal-delay:.12s">
+                    <p class="eyebrow">Hello, I'm <span data-site-name>Arafat Rahman</span></p>
+                    <h2 id="about-story-title">Two kinds of curiosity.</h2>
+                    <p class="lead">One makes me open a code editor. The other makes me pack a bag.</p>
+                    <p>As a student, I am learning web development step by step. I'm interested in technology because it lets an idea become something another person can open, read and experience. Right now that means practising semantic HTML, expressive CSS, responsive layouts with Bootstrap and Vanilla JavaScript.</p>
+                    <p>I'm an aspiring developer, not an expert. This website is one of my real practice projects: a place to make mistakes, understand the code and slowly improve the way a story is presented on a screen.</p>
+                    <p>Travelling is the other half of the picture. I'm drawn to natural landscapes, local culture, coastlines, hills, village roads and the small unplanned pauses between destinations. Photography helps me document those moments and remember how a place felt — not just how it looked.</p>
+                    <p>The Journey Archive is where both interests meet: a personal record of places and a project I can keep building as my skills grow.</p>
+                    <a class="btn-ghost" href="albums.html">See the Journeys <span class="arrow" aria-hidden="true">→</span></a>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-pad-sm skills-section" aria-labelledby="pillars-title">
+            <div class="container-xxl">
+                <div class="section-heading" data-reveal>
+                    <div><span class="section-index">01 / Three parts of one story</span><h2 id="pillars-title">What Shapes Me</h2></div>
+                    <p>None of these are separate identities. They simply give me different ways to stay curious.</p>
+                </div>
+                <div class="pillar-grid">
+                    <article class="pillar" data-reveal><span class="pillar-no">01</span><h3>The Student</h3><p>Learning foundations patiently, asking questions and building small projects to understand how things work.</p></article>
+                    <article class="pillar" data-reveal style="--reveal-delay:.08s"><span class="pillar-no">02</span><h3>The Aspiring Developer</h3><p>Interested in technology, clean interfaces, responsive pages and the quiet satisfaction of solving a front-end problem.</p></article>
+                    <article class="pillar" data-reveal style="--reveal-delay:.16s"><span class="pillar-no">03</span><h3>The Traveller</h3><p>Exploring natural and cultural places, taking photographs and collecting stories that deserve to be remembered.</p></article>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-pad philosophy" aria-label="A personal note">
+            <div class="philosophy-bg" aria-hidden="true">
+                <!-- Replace this with your own wide travel photograph: images/profile/philosophy-bg.jpg -->
+                <img src="images/profile/philosophy-bg.jpg" data-local="images/profile/philosophy-bg.jpg"
+                     data-remote="https://images.pexels.com/photos/40718140/pexels-photo-40718140.jpeg?auto=compress&amp;cs=tinysrgb&amp;fit=crop&amp;w=2000&amp;h=1200"
+                     data-label="A quiet horizon" data-palette="teknaf" data-parallax="0.12" alt="" loading="lazy" decoding="async">
+            </div>
+            <div class="container-xxl" data-reveal>
+                <p class="pull-quote">I want to build things with care, and <span>remember places</span> with the same kind of attention.</p>
+            </div>
+        </section>
+
+        <section class="section-pad" aria-labelledby="learning-title">
+            <div class="container-xxl">
+                <div class="section-heading" data-reveal>
+                    <div><span class="section-index">02 / At my own pace</span><h2 id="learning-title">Learning Path</h2></div>
+                    <p>A beginner-friendly snapshot of what I'm practising while building this archive.</p>
+                </div>
+                <div class="skills-grid">
+                    <article class="skill-card" data-reveal><span class="skill-number">01</span><h3>HTML5</h3><p>Semantic, accessible structure.</p><span class="skill-state">Learning</span></article>
+                    <article class="skill-card" data-reveal style="--reveal-delay:.06s"><span class="skill-number">02</span><h3>CSS3</h3><p>Layout, typography and motion.</p><span class="skill-state">Practising</span></article>
+                    <article class="skill-card" data-reveal style="--reveal-delay:.12s"><span class="skill-number">03</span><h3>Bootstrap 5</h3><p>Responsive structure and utilities.</p><span class="skill-state">Practising</span></article>
+                    <article class="skill-card" data-reveal style="--reveal-delay:.18s"><span class="skill-number">04</span><h3>JavaScript</h3><p>Data-driven pages and interactions.</p><span class="skill-state">Learning</span></article>
+                </div>
+                <div class="text-center mt-5" data-reveal><a class="btn-cinematic" href="gallery.html">Explore the Photographs <span class="arrow" aria-hidden="true">↗</span></a></div>
+            </div>
+        </section>
+    </main>
+    <div id="site-footer"></div>
+</body>
+</html>
