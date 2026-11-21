@@ -308,6 +308,13 @@ button { color: inherit; }
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
 }
+/* Keep the light navigation opaque over every hero and while scrolling. */
+[data-theme="light"] .site-nav,
+[data-theme="light"] .site-nav.is-scrolled {
+    background: #f8f7f4;
+    border-bottom-color: var(--line);
+}
+[data-theme="light"] .navbar-collapse { background-color: #f8f7f4; }
 .navbar { --bs-navbar-padding-y: 0; }
 .navbar-brand.brand {
     display: inline-flex;
@@ -627,6 +634,19 @@ body.is-loaded .load-reveal {
     --gold: #e3c793;
     --gold-light: #f1d9ad;
     color: var(--ink);
+}
+/* Set heading and overlay colors explicitly: Bootstrap's heading color and
+   page theme variables must never turn text dark over a photograph. */
+.journey-card h3, .journey-card .card-description,
+.journey-card .card-top, .journey-card .card-meta-row,
+.featured-item .featured-caption, .featured-item .featured-caption strong,
+.gallery-item .gallery-overlay, .gallery-item .gallery-overlay strong,
+.gallery-item .gallery-overlay small, .mini-journey h3 {
+    color: #fff;
+}
+.journey-card .card-number, .journey-card .card-region,
+.journey-card .card-cta, .gallery-item .gallery-place, .mini-journey span {
+    color: #f1d9ad;
 }
 .journey-card:hover, .featured-item:hover, .mini-journey:hover { color: var(--ink); }
 
