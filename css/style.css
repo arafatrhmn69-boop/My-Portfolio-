@@ -41,6 +41,16 @@
   --line-soft: rgba(0, 0, 0, 0.07);
   --glass: rgba(248, 247, 244, 0.85);
   --shadow: 0 28px 80px rgba(0, 0, 0, 0.12);
+
+  /* Theme-specific overrides for light mode */
+  .card-top { color: rgba(0, 0, 0, 0.78); }
+  .page-hero::after { color: rgba(0, 0, 0, 0.025); }
+  .pillar { background: rgba(0, 0, 0, 0.018); }
+  .control-button { background: rgba(0, 0, 0, 0.025); }
+  .btn-cinematic { color: #f8f7f4; }
+  .btn-cinematic:hover, .btn-cinematic:focus { color: #f8f7f4; }
+  .btn-ghost:hover, .btn-ghost:focus { color: #1a1917; }
+  .filter-btn.active { color: #f8f7f4; }
 }
 
 
@@ -1172,6 +1182,40 @@ body.has-custom-cursor input, body.has-custom-cursor textarea { cursor: text; }
     .lightbox-info h2 { font-size: 2rem; }
     .brand { font-size: .9rem; letter-spacing: .08em; }
     .brand-mark { width: 14px; height: 14px; }
+}
+
+/* Touch devices: show editorial information without requiring hover. */
+@media (hover: none) {
+    .card-description, .gallery-overlay { opacity: 1; transform: none; }
+    .gallery-item::after { opacity: 1; }
+    .journey-card:hover { transform: none; }
+}
+
+/* ---------- Accessibility preferences ---------- */
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+    .js [data-reveal] { opacity: 1; transform: none; }
+    .js .load-reveal { opacity: 1; transform: none; }
+    .cursor-dot, .cursor-ring { display: none !important; }
+    body.has-custom-cursor, body.has-custom-cursor a, body.has-custom-cursor button { cursor: auto; }
+}
+
+/* ---------- Tablet (768px - 991.98px) Responsive Fixes ---------- */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .about-layout, .contact-layout { grid-template-columns: 1fr; }
+    .about-list { grid-template-columns: 1fr; }
+    .pillar-grid, .mini-journeys { grid-template-columns: 1fr; }
+    .story-list { grid-template-columns: 1fr; }
+    .album-info-strip { grid-template-columns: 1fr; gap: 14px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-field.full { grid-column: auto; }
+    .footer-grid { grid-template-columns: 1fr; gap: 38px; }
+    .timeline-list::before { left: 10px; }
+    .timeline-item { grid-template-columns: 28px 1fr; min-height: 0; padding: 0 0 38px 0; }
+    .timeline-item::before { grid-column: 1; grid-row: 1; justify-self: start; }
+    .timeline-item:nth-child(odd) .timeline-content, .timeline-item:nth-child(even) .timeline-content { grid-column: 2; grid-row: 1; text-align: left; padding: 0 0 0 22px; }
+    .timeline-year { font-size: 3.5rem; }
 }
 
 /* Touch devices: show editorial information without requiring hover. */
