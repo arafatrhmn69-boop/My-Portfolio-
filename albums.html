@@ -12,6 +12,12 @@
     <title>My Journeys | THE JOURNEY ARCHIVE</title>
     <script>
         document.documentElement.classList.add("js");
+        /* Apply the saved palette before the page is painted. Storage may be unavailable. */
+        try {
+            if (localStorage.getItem("theme") === "light") {
+                document.documentElement.setAttribute("data-theme", "light");
+            }
+        } catch (error) { /* Use the default dark palette. */ }
         /* Failsafe: never leave the loading screen visible if script.js cannot load. */
         window.setTimeout(function () {
             var loader = document.getElementById("loader");
