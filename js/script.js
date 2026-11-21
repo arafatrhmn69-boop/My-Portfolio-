@@ -299,9 +299,9 @@
                         <li class="nav-item">
                             <a class="nav-link nav-link-custom${active === id ? " active" : ""}" href="${href}"${active === id ? ' aria-current="page"' : ""}>${label}</a>
                         </li>`).join("")}
-                         <li class="nav-item ms-lg-3">
-            <button id="theme-toggle" type="button" class="btn btn-sm" style="border: 1px solid var(--gold); color: var(--ink); border-radius: 20px; padding: 4px 14px;">☀️ Light</button>
-          </li>
+                        <li class="nav-item ms-lg-3">
+                            <button id="theme-toggle" type="button" class="theme-toggle">☀️ Light</button>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -462,26 +462,29 @@
                 toggler.focus();
             }
         });
-            const toggleBtn = document.getElementById("theme-toggle");
-    const rootElement = document.documentElement;
-
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "light") {
-      rootElement.setAttribute("data-theme", "light");
-      if (toggleBtn) toggleBtn.textContent = "🌙 Dark";
     }
 
-    if (toggleBtn) {
-      toggleBtn.addEventListener("click", () => {
-        const currentTheme = rootElement.getAttribute("data-theme");
-        const newTheme = currentTheme === "light" ? "dark" : "light";
-        
-        rootElement.setAttribute("data-theme", newTheme);
-        localStorage.setItem("theme", newTheme);
-        toggleBtn.textContent = newTheme === "light" ? "🌙 Dark" : "☀️ Light";
-      });
-    }
+    function initTheme() {
+        const toggle = document.getElementById("theme-toggle");
+        const root = document.documentElement;
+        const themeColor = document.querySelector('meta[name="theme-color"]');
 
+        function updateThemeUI() {
+            const light = root.getAttribute("data-theme") === "light";
+            if (toggle) {
+                toggle.textContent = light ? "🌙 Dark" : "☀️ Light";
+                toggle.setAttribute("aria-label", light ? "Switch to dark theme" : "Switch to light theme");
+            }
+            if (themeColor) themeColor.setAttribute("content", light ? "#f8f7f4" : "#07090a");
+        }
+
+        updateThemeUI();
+        toggle?.addEventListener("click", () => {
+            const theme = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+            root.setAttribute("data-theme", theme);
+            try { localStorage.setItem("theme", theme); } catch (error) { /* Theme still works for this page. */ }
+            updateThemeUI();
+        });
     }
 
     function initLoader() {
@@ -1003,6 +1006,7 @@
         hydrateImages();
         initLoader();
         initNavbar();
+        initTheme();
         initReveal();
         initScrollEffects();
         initProfileTilt();
