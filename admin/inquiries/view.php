@@ -87,8 +87,8 @@ require dirname(__DIR__) . '/partials/header.php';
                         <dd><?= e(local_datetime($inquiry['created_at'], 'j M Y, g:i A')) ?></dd>
                     </div>
                     <div>
-                        <dt>Stored (UTC)</dt>
-                        <dd><?= e(local_datetime($inquiry['created_at'], 'Y-m-d H:i')) ?> UTC</dd>
+                        <dt>Stored in SQLite (UTC)</dt>
+                        <dd><?= e($inquiry['created_at']) ?> UTC</dd>
                     </div>
                 </dl>
             </div>
