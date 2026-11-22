@@ -212,7 +212,7 @@ $usesDefaultPassword = Auth::usingDefaultPassword();
             </header>
 
             <main class="admin-content" id="admin-main" tabindex="-1">
-                <?php if ($flashMessages !== []): ?>
+<?php if ($flashMessages !== []): ?>
                     <div class="admin-alerts">
                         <?php
                         $flashIcons = [
@@ -239,9 +239,9 @@ $usesDefaultPassword = Auth::usingDefaultPassword();
                             </div>
                         <?php endforeach; ?>
                     </div>
-                <?php endif; ?>
+<?php endif; ?>
 
-                <?php if ($usesDefaultPassword && $activePage === 'dashboard'): ?>
+<?php if ($usesDefaultPassword && $activePage === 'dashboard'): ?>
                     <div class="admin-alert admin-alert--warning" role="alert" style="margin-bottom:24px">
                         <i class="bi bi-shield-exclamation" aria-hidden="true"></i>
                         <p>
@@ -249,7 +249,7 @@ $usesDefaultPassword = Auth::usingDefaultPassword();
                             <a href="<?= e(admin_url('account.php')) ?>">Change it now</a> before sharing this site.
                         </p>
                     </div>
-                <?php endif; ?>
+<?php endif; ?>
 
                 <div class="page-head">
                     <div>

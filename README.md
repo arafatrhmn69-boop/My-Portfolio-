@@ -226,6 +226,7 @@ Optional temporary travel/portrait placeholders are loaded from [Pexels](https:/
 The repository also contains a complete, secure admin console for the archive:
 
 - Session login with `password_hash()` / `password_verify()`, CSRF tokens and brute-force lockout
+- Secure username and password changes with current-password confirmation
 - Dashboard totals for trips, inquiries and gallery photographs
 - Full CRUD for trips, including validated image uploads
 - A Gallery / Albums manager with multi-file uploads, album filters, search and file-deleting deletes

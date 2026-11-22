@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Account & security — identity summary and password change.
+ * Account & security — identity summary, username change and password change.
  */
 
 require_once dirname(__DIR__) . '/config/bootstrap.php';
@@ -12,42 +12,91 @@ Auth::requireLogin();
 
 $currentUser = Auth::user();
 $errors = [];
+$usernameErrors = [];
 $errorMessage = '';
+$usernameValue = '';
 
 if (is_post()) {
     Csrf::requireValid();
 
-    $currentPassword = (string) ($_POST['current_password'] ?? '');
-    $newPassword = (string) ($_POST['new_password'] ?? '');
-    $confirmPassword = (string) ($_POST['confirm_password'] ?? '');
+    $formAction = input_string($_POST, 'form_action');
 
-    if ($currentPassword === '') {
-        $errors['current_password'] = 'Enter your current password.';
-    }
+    if ($formAction === 'change_username') {
+        $usernameValue = input_string($_POST, 'new_username');
+        $usernamePassword = (string) ($_POST['username_password'] ?? '');
 
-    if ($newPassword === '') {
-        $errors['new_password'] = 'Choose a new password.';
-    } elseif (mb_strlen($newPassword, 'UTF-8') < 12) {
-        $errors['new_password'] = 'Use at least 12 characters.';
-    } elseif (!preg_match('/[A-Za-z]/', $newPassword) || !preg_match('/[0-9]/', $newPassword)) {
-        $errors['new_password'] = 'Include at least one letter and one number.';
-    }
+        $usernameProblem = Auth::usernameValidationError($usernameValue);
 
-    if ($confirmPassword === '') {
-        $errors['confirm_password'] = 'Repeat the new password.';
-    } elseif ($confirmPassword !== $newPassword) {
-        $errors['confirm_password'] = 'The two new passwords do not match.';
-    }
+        if ($usernameProblem !== null) {
+            $usernameErrors['new_username'] = $usernameProblem;
+        } elseif (strcasecmp($usernameValue, (string) $currentUser['username']) === 0) {
+            $usernameErrors['new_username'] = 'That is already your username.';
+        }
 
-    if ($errors === []) {
-        $errorMessage = Auth::changePassword((int) $currentUser['id'], $currentPassword, $newPassword);
+        if ($usernamePassword === '') {
+            $usernameErrors['username_password'] = 'Enter your current password.';
+        }
 
-        if ($errorMessage === '') {
-            Flash::add('success', 'Your password was changed. Other sessions must sign in again.');
-            redirect(admin_url('account.php'));
+        if ($usernameErrors === []) {
+            $usernameError = Auth::changeUsername(
+                (int) $currentUser['id'],
+                $usernamePassword,
+                $usernameValue
+            );
+
+            if ($usernameError === '') {
+                Flash::add(
+                    'success',
+                    'Your username was changed to “' . $usernameValue . '”. Use it the next time you sign in.'
+                );
+                redirect(admin_url('account.php'));
+            }
+
+            if ($usernameError === 'Your current password is not correct.') {
+                $usernameErrors['username_password'] = $usernameError;
+            } else {
+                $usernameErrors['new_username'] = $usernameError;
+            }
+        }
+    } else {
+        $currentPassword = (string) ($_POST['current_password'] ?? '');
+        $newPassword = (string) ($_POST['new_password'] ?? '');
+        $confirmPassword = (string) ($_POST['confirm_password'] ?? '');
+
+        if ($currentPassword === '') {
+            $errors['current_password'] = 'Enter your current password.';
+        }
+
+        if ($newPassword === '') {
+            $errors['new_password'] = 'Choose a new password.';
+        } elseif (mb_strlen($newPassword, 'UTF-8') < 12) {
+            $errors['new_password'] = 'Use at least 12 characters.';
+        } elseif (!preg_match('/[A-Za-z]/', $newPassword) || !preg_match('/[0-9]/', $newPassword)) {
+            $errors['new_password'] = 'Include at least one letter and one number.';
+        }
+
+        if ($confirmPassword === '') {
+            $errors['confirm_password'] = 'Repeat the new password.';
+        } elseif ($confirmPassword !== $newPassword) {
+            $errors['confirm_password'] = 'The two new passwords do not match.';
+        }
+
+        if ($errors === []) {
+            $errorMessage = Auth::changePassword((int) $currentUser['id'], $currentPassword, $newPassword);
+
+            if ($errorMessage === '') {
+                Flash::add('success', 'Your password was changed. Other sessions must sign in again.');
+                redirect(admin_url('account.php'));
+            }
         }
     }
 }
+
+$usernamePattern = sprintf(
+    '[A-Za-z][A-Za-z0-9._-]{%d,%d}',
+    ADMIN_USERNAME_MIN_LENGTH - 1,
+    ADMIN_USERNAME_MAX_LENGTH - 1
+);
 
 $freshUser = Auth::user();
 $initial = mb_strtoupper(mb_substr((string) $freshUser['username'], 0, 1, 'UTF-8'), 'UTF-8');
@@ -56,7 +105,7 @@ $usingDefaultPassword = Auth::usingDefaultPassword();
 $pageTitle = 'Account & Security';
 $pageHeading = 'Account & Security';
 $pageEyebrow = 'Settings';
-$pageSubtitle = 'Your sign-in identity, password and the protections guarding this console.';
+$pageSubtitle = 'Your sign-in identity, username, password and the protections guarding this console.';
 $activePage = 'account';
 
 $pageActions = '<a class="btn-line" href="' . e(admin_url('dashboard.php')) . '">'
@@ -118,12 +167,63 @@ require __DIR__ . '/partials/header.php';
             </div>
         </section>
 
+        <section class="admin-card" aria-labelledby="username-title">
+            <div class="admin-card__head">
+                <h2 class="admin-card__title" id="username-title">Change <span>username</span></h2>
+                <span class="badge-soft badge-soft--gold">Password confirmation required</span>
+            </div>
+            <form method="post" action="<?= e(admin_url('account.php')) ?>" data-submit-once>
+                <?= Csrf::field() ?>
+                <input type="hidden" name="form_action" value="change_username">
+                <div class="admin-card__body">
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label class="form-label-admin" for="new_username">New username</label>
+                            <input class="form-control-admin<?= isset($usernameErrors['new_username']) ? ' is-invalid-admin' : '' ?>"
+                                type="text" id="new_username" name="new_username"
+                                value="<?= e($usernameValue) ?>" autocomplete="username" spellcheck="false"
+                                autocapitalize="none" minlength="<?= e((string) ADMIN_USERNAME_MIN_LENGTH) ?>"
+                                maxlength="<?= e((string) ADMIN_USERNAME_MAX_LENGTH) ?>"
+                                pattern="<?= e($usernamePattern) ?>" required
+                                <?= isset($usernameErrors['new_username']) ? 'aria-invalid="true" aria-describedby="error-new_username"' : '' ?>>
+                            <?php if (isset($usernameErrors['new_username'])): ?>
+                                <span class="form-error" id="error-new_username"><?= e($usernameErrors['new_username']) ?></span>
+                            <?php endif; ?>
+                            <p class="form-hint">Currently <strong><?= e($freshUser['username']) ?></strong>. Use <?= e((string) ADMIN_USERNAME_MIN_LENGTH) ?>–<?= e((string) ADMIN_USERNAME_MAX_LENGTH) ?> characters, starting with a letter; letters, numbers, dots, underscores and hyphens only. Names are unique irrespective of case.</p>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label-admin" for="username_password">Current password</label>
+                            <input class="form-control-admin<?= isset($usernameErrors['username_password']) ? ' is-invalid-admin' : '' ?>"
+                                type="password" id="username_password" name="username_password"
+                                autocomplete="current-password" required
+                                <?= isset($usernameErrors['username_password']) ? 'aria-invalid="true" aria-describedby="error-username_password"' : '' ?>>
+                            <?php if (isset($usernameErrors['username_password'])): ?>
+                                <span class="form-error" id="error-username_password"><?= e($usernameErrors['username_password']) ?></span>
+                            <?php else: ?>
+                                <p class="form-hint">Confirms that you, not someone using an open session, are making the change.</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                <div class="admin-card__foot">
+                    <div class="form-actions">
+                        <button class="btn-gold" type="submit">
+                            <i class="bi bi-person-check" aria-hidden="true"></i> Update username
+                        </button>
+                        <span class="form-hint" style="margin:0">You will stay signed in on this device.</span>
+                    </div>
+                </div>
+            </form>
+        </section>
+
         <section class="admin-card" aria-labelledby="password-title">
             <div class="admin-card__head">
                 <h2 class="admin-card__title" id="password-title">Change <span>password</span></h2>
             </div>
             <form method="post" action="<?= e(admin_url('account.php')) ?>" data-submit-once>
                 <?= Csrf::field() ?>
+                <input type="hidden" name="form_action" value="change_password">
                 <div class="admin-card__body">
                     <div class="form-grid">
                         <div class="form-field form-field--full">
@@ -197,6 +297,11 @@ require __DIR__ . '/partials/header.php';
                         within <?= e((string) (int) (LOGIN_WINDOW / 60)) ?> minutes trigger a temporary lockout.</span>
                 </li>
                 <li>
+                    <i class="bi bi-person-check" aria-hidden="true"></i>
+                    <span><strong>Username changes.</strong> The current password is required, names are unique
+                        case-insensitively, and the session ID and CSRF token rotate afterwards.</span>
+                </li>
+                <li>
                     <i class="bi bi-file-earmark-code" aria-hidden="true"></i>
                     <span><strong>CSRF tokens.</strong> Every form is signed with a per-session token verified in
                         constant time.</span>
@@ -222,8 +327,8 @@ require __DIR__ . '/partials/header.php';
 
             <p class="form-hint" style="margin:0">
                 Lost access? On the server, run
-                <code>php database/setup.php --new-password</code> to generate a fresh temporary password for the
-                seeded administrator account.
+                <code>php database/setup.php --new-password --user=<?= e($freshUser['username']) ?></code>
+                to generate a fresh temporary password for this account.
             </p>
         </div>
     </section>

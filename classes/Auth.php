@@ -12,6 +12,7 @@ declare(strict_types=1);
  *  - idle timeout + absolute timeout
  *  - user-agent fingerprint check
  *  - database-backed failed-login throttling
+ *  - username changes require the current password and an unused name
  *  - the account is re-checked against the database on every request
  */
 final class Auth
@@ -180,6 +181,120 @@ final class Auth
         $prefix = app_base_url() . '/admin/';
 
         return str_starts_with($intended, $prefix) ? $intended : null;
+    }
+
+    /**
+     * Validate the format of a proposed administrator username.
+     *
+     * @return string|null Null when valid, otherwise a user-safe message.
+     */
+    public static function usernameValidationError(string $username): ?string
+    {
+        $username = trim($username);
+
+        if ($username === '') {
+            return 'Enter a new username.';
+        }
+
+        $length = mb_strlen($username, 'UTF-8');
+
+        if ($length < ADMIN_USERNAME_MIN_LENGTH || $length > ADMIN_USERNAME_MAX_LENGTH) {
+            return sprintf(
+                'Use between %d and %d characters.',
+                ADMIN_USERNAME_MIN_LENGTH,
+                ADMIN_USERNAME_MAX_LENGTH
+            );
+        }
+
+        if (preg_match('/^[A-Za-z][A-Za-z0-9._-]*$/', $username) !== 1) {
+            return 'Start with a letter and use only letters, numbers, dots, underscores or hyphens.';
+        }
+
+        return null;
+    }
+
+    /**
+     * Change the signed-in administrator's username.
+     *
+     * The current password is verified again, the name must be unused
+     * (case-insensitively), and the session/CSRF state is refreshed.
+     *
+     * @return string Empty string on success, otherwise an error message.
+     */
+    public static function changeUsername(int $adminId, string $currentPassword, string $newUsername): string
+    {
+        $newUsername = trim($newUsername);
+        $validationError = self::usernameValidationError($newUsername);
+
+        if ($validationError !== null) {
+            return $validationError;
+        }
+
+        $pdo = Database::connection();
+        $statement = $pdo->prepare(
+            'SELECT username, password_hash FROM admins WHERE id = :id LIMIT 1'
+        );
+        $statement->execute([':id' => $adminId]);
+        $admin = $statement->fetch();
+
+        if (!is_array($admin)) {
+            return 'The administrator account could not be found.';
+        }
+
+        if (!password_verify($currentPassword, (string) $admin['password_hash'])) {
+            usleep(random_int(150000, 350000));
+
+            return 'Your current password is not correct.';
+        }
+
+        if (strcasecmp($newUsername, (string) $admin['username']) === 0) {
+            return 'That is already your username.';
+        }
+
+        $duplicate = $pdo->prepare(
+            'SELECT id FROM admins
+             WHERE username = :username COLLATE NOCASE AND id != :id
+             LIMIT 1'
+        );
+        $duplicate->execute([
+            ':username' => $newUsername,
+            ':id'       => $adminId,
+        ]);
+
+        if ($duplicate->fetchColumn() !== false) {
+            return 'That username is already in use.';
+        }
+
+        $update = $pdo->prepare('UPDATE admins SET username = :username WHERE id = :id');
+
+        try {
+            $update->execute([
+                ':username' => $newUsername,
+                ':id'       => $adminId,
+            ]);
+        } catch (PDOException $error) {
+            if (str_contains(strtolower($error->getMessage()), 'unique')) {
+                return 'That username is already in use.';
+            }
+
+            throw $error;
+        }
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            $_SESSION['admin_username'] = $newUsername;
+        }
+
+        // Force the next Auth::user() call to read the updated row, rotate the
+        // CSRF token and roll the session ID after this sensitive change.
+        self::$resolved = false;
+        self::$user = null;
+        Csrf::rotate();
+
+        if (session_status() === PHP_SESSION_ACTIVE && !headers_sent()) {
+            session_regenerate_id(true);
+        }
+
+        return '';
     }
 
     /**
