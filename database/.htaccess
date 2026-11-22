@@ -1,0 +1,27 @@
+# ============================================================
+#  Protect the SQLite database
+# ============================================================
+#  database/setup.php stays reachable so the installer can be run
+#  from a browser on a fresh deployment; it refuses to run once an
+#  administrator exists. Everything else in this folder is private.
+# ============================================================
+
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>
+
+<IfModule mod_authz_core.c>
+    <FilesMatch "\.(sqlite|sqlite3|sqlite-wal|sqlite-shm|sqlite-journal|db|db3|log|bak|installed)$">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "^\.">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+    <FilesMatch "\.(sqlite|sqlite3|sqlite-wal|sqlite-shm|sqlite-journal|db|db3|log|bak|installed)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>

@@ -1,0 +1,43 @@
+# ============================================================
+#  THE JOURNEY ARCHIVE — root Apache configuration
+# ============================================================
+#  Works at a domain root and inside a sub-folder. Every block is
+#  wrapped so hosts without the module ignore it instead of
+#  returning a 500 error.
+# ============================================================
+
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>
+
+# Never serve the SQLite database, journals, logs or backup files.
+<IfModule mod_authz_core.c>
+    <FilesMatch "\.(sqlite|sqlite3|sqlite-wal|sqlite-shm|sqlite-journal|db|db3|log|bak)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+    <FilesMatch "\.(sqlite|sqlite3|sqlite-wal|sqlite-shm|sqlite-journal|db|db3|log|bak)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>
+
+# Block the internals: PHP classes, config and includes are never assets.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(?:config|classes|includes)(?:/|$) - [F,L,NC]
+    RewriteRule (^|/)\.git - [F,L,NC]
+    RewriteRule (^|/)\.(?!well-known) - [F,L,NC]
+</IfModule>
+
+# A small, safe baseline for static files. PHP pages send a stricter,
+# page-specific policy themselves (see includes/helpers.php).
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+AddDefaultCharset UTF-8

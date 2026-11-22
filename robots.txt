@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Private areas of the site
+Disallow: /admin/
+Disallow: /api/
+Disallow: /database/
