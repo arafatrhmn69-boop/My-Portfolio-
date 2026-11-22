@@ -22,6 +22,19 @@ final class Schema
             )'
         );
 
+        // Usernames are compared case-insensitively, so enforce that in the
+        // database as well as in Auth::changeUsername(). An older database with
+        // pre-existing case-variant duplicates is left to the application check
+        // rather than failing every request.
+        try {
+            $pdo->exec(
+                'CREATE UNIQUE INDEX IF NOT EXISTS idx_admins_username_nocase
+                 ON admins (username COLLATE NOCASE)'
+            );
+        } catch (PDOException) {
+            // Application-level uniqueness still applies.
+        }
+
         $pdo->exec(
             'CREATE TABLE IF NOT EXISTS trips (
                 id               INTEGER PRIMARY KEY AUTOINCREMENT,

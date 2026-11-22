@@ -58,6 +58,14 @@ define('SESSION_NAME', 'journey_admin');
 define('SESSION_IDLE_TIMEOUT', 60 * 30);        // 30 minutes without activity
 define('SESSION_ABSOLUTE_TIMEOUT', 60 * 60 * 2); // 2 hours total, then re-login
 
+/**
+ * Administrator username policy. Names are unique case-insensitively and
+ * must start with a letter; letters, numbers, dots, underscores and hyphens
+ * are allowed after that.
+ */
+define('ADMIN_USERNAME_MIN_LENGTH', 3);
+define('ADMIN_USERNAME_MAX_LENGTH', 40);
+
 /** Failed logins allowed inside LOGIN_WINDOW before a temporary lockout. */
 define('LOGIN_MAX_ATTEMPTS', 5);
 define('LOGIN_WINDOW', 60 * 15);                 // 15 minutes

@@ -5,6 +5,7 @@ A secure, dependency-free admin console for the travel portfolio: **PHP 8 (OOP +
 The static homepage, About and Journeys pages keep working exactly as before. The admin panel is an optional layer that adds:
 
 - password-protected administration (`password_hash` / `password_verify`)
+- secure username and password changes from Account & Security
 - a dashboard with live totals
 - full CRUD for trips & destinations, including image uploads
 - a Gallery / Albums manager with multi-file uploads, filters, search and file-deleting deletes
@@ -158,7 +159,7 @@ Open:
 https://your-domain.com/admin/login.php
 ```
 
-Use the username and password supplied with this build (also stated at the end of the build conversation — **it is not stored in the repository**). Then go to **Account & Security → Change password** immediately.
+Use the username and password supplied with this build (also stated at the end of the build conversation — **it is not stored in the repository**). Then go to **Account & Security** to change the password and, if you wish, the username.
 
 ### 3.5 Verify
 
@@ -260,7 +261,9 @@ Search by name, email or message; read the full message; reply via `mailto:`; de
 
 ### Account & Security
 
-Change the password (12+ characters, at least one letter and one number, must match confirmation). The session ID and CSRF token rotate afterwards.
+**Change username** — 3–40 characters, starting with a letter; letters, numbers, dots, underscores and hyphens are allowed. Usernames are unique irrespective of case. The current password must be confirmed, then the session ID and CSRF token rotate and the new name works at the next sign-in.
+
+**Change password** — 12+ characters, at least one letter and one number, must match confirmation. The session ID and CSRF token rotate afterwards.
 
 ---
 
@@ -588,7 +591,7 @@ Contact responses use `201` on success, `419` for an expired CSRF token, `422` f
 - [ ] Change the seeded password on first login.
 - [ ] Delete `database/setup.php` (or keep it blocked) after installing.
 - [ ] Confirm `APP_DEBUG` is `false` in `config/config.php`.
-- [ ] Keep `database/` and `uploads/trips/` writable but **not** world-readable where possible (`755`/`775`, files `644`).
+- [ ] Keep `database/`, `uploads/trips/` and `uploads/gallery/` writable but **not** world-readable where possible (`755`/`775`, files `644`).
 - [ ] Never commit `database/portfolio.sqlite` or uploads (`.gitignore` already covers both).
 - [ ] Back up the database regularly (§9).
 - [ ] Rotate the password if it was ever shared in chat, email or a screenshot.
@@ -605,8 +608,10 @@ php database/setup.php --new-password
 
 Generates a new random 18-character password for `arafat_admin`, prints it **once**, updates the hash and clears old lockouts.
 
+If you changed your username from Account & Security, pass it explicitly:
+
 ```bash
-php database/setup.php --new-password --user=another_admin
+php database/setup.php --new-password --user=your_current_username
 ```
 
 ### Add a second administrator via CLI
@@ -717,7 +722,7 @@ The PHP location block must still pass `.php` files to PHP-FPM. Base URL auto-de
 | `admin/gallery.php` | Gallery / album manager and batch upload |
 | `admin/gallery-delete.php` | Gallery delete endpoint (row + file) |
 | `admin/inquiries/*` | Inbox |
-| `admin/account.php` | Password change + security summary |
+| `admin/account.php` | Username/password changes + security summary |
 | `api/trips.php` | Public JSON feed |
 | `api/contact.php` | Public contact endpoint |
 | `journeys.php` | Public integration demo (trips + working contact form) |
@@ -738,16 +743,18 @@ All third-party assets are loaded from CDNs already used by the public site (Boo
 
 ## 14. Default credentials
 
-The username is:
+The seeded username is:
 
 ```text
 arafat_admin
 ```
 
-The plain-text password is **not** in this repository. It was delivered in the build conversation and stored only as a bcrypt digest in `config/config.php`. If it is ever lost:
+You can change it at any time from **Account & Security**; the new name is used for the next sign-in. The plain-text password is **not** in this repository. It was delivered in the build conversation and stored only as a bcrypt digest in `config/config.php`. If it is ever lost:
 
 ```bash
 php database/setup.php --new-password
+# or, after changing the username:
+php database/setup.php --new-password --user=your_current_username
 ```
 
 Then change it from **Account & Security**.
