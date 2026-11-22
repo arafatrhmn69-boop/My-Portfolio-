@@ -30,6 +30,10 @@
     RewriteRule ^(?:config|classes|includes)(?:/|$) - [F,L,NC]
     RewriteRule (^|/)\.git - [F,L,NC]
     RewriteRule (^|/)\.(?!well-known) - [F,L,NC]
+
+    # The gallery and album pages are now rendered from SQLite.
+    RewriteRule ^gallery\.html$ gallery.php [R=302,L,QSA]
+    RewriteRule ^album\.html$ album.php [R=302,L,QSA]
 </IfModule>
 
 # A small, safe baseline for static files. PHP pages send a stricter,

@@ -22,9 +22,11 @@ declare(strict_types=1);
 define('BASE_PATH', dirname(__DIR__));
 define('DB_PATH', BASE_PATH . '/database/portfolio.sqlite');
 define('UPLOAD_PATH', BASE_PATH . '/uploads/trips');
+define('GALLERY_UPLOAD_PATH', BASE_PATH . '/uploads/gallery');
 
 /** Public URL (relative to the site root) used for uploaded trip images. */
 define('UPLOAD_URL_PREFIX', 'uploads/trips');
+define('GALLERY_URL_PREFIX', 'uploads/gallery');
 
 /** Fallback card image used when a trip has no photograph. */
 define('PLACEHOLDER_IMAGE', 'assets/trip-placeholder.svg');
@@ -105,6 +107,14 @@ define('CONTACT_MAX_PER_HOUR', 5);       // per browser session
 // ---------------------------------------------------------------------------
 define('TRIPS_PER_PAGE', 8);
 define('INQUIRIES_PER_PAGE', 10);
+define('GALLERY_PER_PAGE', 24);
+
+// ---------------------------------------------------------------------------
+//  Gallery uploads
+// ---------------------------------------------------------------------------
+define('GALLERY_MAX_FILES', 10); // per upload batch
+define('GALLERY_MAX_CAPTION', 255);
+define('GALLERY_MAX_ALBUM_NAME', 80);
 
 // ---------------------------------------------------------------------------
 //  Locale

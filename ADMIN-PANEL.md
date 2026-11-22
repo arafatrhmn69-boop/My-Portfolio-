@@ -2,11 +2,12 @@
 
 A secure, dependency-free admin console for the travel portfolio: **PHP 8 (OOP + PDO)**, **SQLite**, and a **Bootstrap 5** dashboard styled to match the public site.
 
-The public HTML site keeps working exactly as before. The admin panel is an optional layer that adds:
+The static homepage, About and Journeys pages keep working exactly as before. The admin panel is an optional layer that adds:
 
 - password-protected administration (`password_hash` / `password_verify`)
 - a dashboard with live totals
 - full CRUD for trips & destinations, including image uploads
+- a Gallery / Albums manager with multi-file uploads, filters, search and file-deleting deletes
 - an inquiry inbox fed by the public contact form
 - a JSON trip feed and a ready-made public contact endpoint
 - a server-rendered demo of the frontend integration
@@ -22,7 +23,7 @@ The public HTML site keeps working exactly as before. The admin panel is an opti
 | `fileinfo` extension | Used to verify uploaded image MIME types |
 | `mbstring` extension | Used for UTF-8 safe length/truncation |
 | Apache with `mod_rewrite` / `mod_headers` **or** Nginx | `.htaccess` files protect internals; Nginx rules are in §11 |
-| Writable folders | `database/` and `uploads/trips/` must be writable by PHP |
+| Writable folders | `database/`, `uploads/trips/` and `uploads/gallery/` must be writable by PHP |
 
 > **GitHub Pages cannot run PHP.** The static site can stay on Pages, but the admin panel needs any PHP host (shared hosting, cPanel/XAMPP, a VPS, or a container). Upload the whole project to the PHP host; the static pages continue to work there too.
 
@@ -90,11 +91,14 @@ My-Portfolio-/
 │
 ├── uploads/
 │   ├── .htaccess               # blocks PHP execution, enables caching
-│   └── trips/                  # uploaded photographs (git-ignored)
+│   ├── trips/                  # uploaded journey photographs (git-ignored)
+│   └── gallery/                # uploaded gallery photographs (git-ignored)
 │
 ├── assets/
 │   └── trip-placeholder.svg    # fallback cover image
 │
+├── gallery.php                 # public gallery (reads gallery_photos)
+├── album.php                   # public album slideshow (reads gallery_photos)
 ├── journeys.php                # public server-rendered demo of the integration
 ├── ADMIN-PANEL.md              # this file
 ├── .htaccess                   # blocks internals + directory listings
@@ -139,9 +143,10 @@ or visit `https://your-domain.com/database/setup.php` **once**.
 This will:
 
 1. create `database/portfolio.sqlite`;
-2. create the `admins`, `trips`, `inquiries` and `login_attempts` tables + indexes;
+2. create the `admins`, `trips`, `gallery_photos`, `inquiries` and `login_attempts` tables + indexes;
 3. add the seeded administrator (username `arafat_admin`);
-4. add seven starter trips based on the existing albums (skip with `--no-demo`).
+4. add seven starter trips based on the existing albums (skip with `--no-demo`);
+5. add 28 starter gallery photographs (four per album) from the existing `/images` folders.
 
 The installer refuses to run again once an administrator exists. Delete `database/setup.php` after installing.
 
@@ -157,7 +162,9 @@ Use the username and password supplied with this build (also stated at the end o
 
 ### 3.5 Verify
 
-- `/admin/dashboard.php` shows the trip and inquiry totals.
+- `/admin/dashboard.php` shows the trip, gallery and inquiry totals.
+- `/admin/gallery.php` lists the 28 starter photographs.
+- `/gallery.php` renders the public gallery from SQLite.
 - `/journeys.php` renders the seven seeded trips from SQLite.
 - `/api/trips.php` returns JSON.
 
@@ -187,6 +194,18 @@ Use the username and password supplied with this build (also stated at the end o
 | `image_path` | TEXT NULL | `uploads/trips/<random>.jpg` or a seeded `images/...` path |
 | `created_at` | TEXT | UTC timestamp |
 
+### `gallery_photos`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | INTEGER PK | |
+| `album_name` | TEXT | required, ≤ 80 chars, free-text album/category |
+| `caption` | TEXT | optional, ≤ 255 chars; applied to every photo in a batch |
+| `image_path` | TEXT | `uploads/gallery/<random>.jpg` or a seeded `images/...` path |
+| `created_at` | TEXT | UTC timestamp |
+
+Indexed by `album_name` (case-insensitive) and `created_at`. Deleting a row also deletes the uploaded file; seeded `/images` files are protected.
+
 ### `inquiries`
 
 | Column | Type | Notes |
@@ -214,7 +233,7 @@ Used for brute-force lockout only; rows older than 24 hours are pruned automatic
 
 ### Dashboard
 
-Four summary cards (trips, inquiries, countries, contact-form status), the four newest journeys and the five newest messages. A warning appears while the seeded password is still active.
+Four summary cards (trips, gallery photographs, countries and inquiries), the four newest journeys and the five newest messages. A warning appears while the seeded password is still active.
 
 ### Trips & Destinations
 
@@ -224,6 +243,16 @@ Four summary cards (trips, inquiries, countries, contact-form status), the four 
 - **Delete** — POST + CSRF, with a JavaScript confirmation; the uploaded image is removed from disk too.
 
 Image rules: JPG/PNG/WebP, max 5 MB, verified with `finfo` + `getimagesize`, stored with a random 32-character filename under `/uploads/trips`. Seeded photographs in `/images` are never deleted by the panel.
+
+### Gallery / Albums
+
+- **Upload** — choose one to ten JPG/PNG/WebP files, type an album name (with an existing-name datalist) and an optional caption for the batch. Files are MIME-checked, renamed randomly and stored under `/uploads/gallery`.
+- **Browse** — responsive thumbnail grid with album chips, captions and upload dates.
+- **Filter & search** — filter by album or search captions, with pagination.
+- **Delete** — POST + CSRF with a confirmation; the database row and the uploaded image file are both removed. Seeded photographs in `/images` are never deleted from disk.
+- **Live public pages** — `gallery.php` and `album.php` read the same table, so changes appear immediately.
+
+Image rules are shared with trip uploads: JPG/PNG/WebP, max 5 MB each, verified with `finfo` + `getimagesize`, random 32-hex filenames. A batch of more than ten files is rejected before anything is written.
 
 ### Inquiries
 
@@ -402,6 +431,18 @@ Then replace the home journeys grid with:
 
 `journeys.php` in the repository is a complete, working example of this approach, including a working contact form at the bottom (driven by `assets/contact-demo.js` and `api/contact.php`). Every value is escaped with `e()`, which is `htmlspecialchars()` with `ENT_QUOTES | ENT_SUBSTITUTE` and UTF-8.
 
+### Gallery and album pages → SQLite
+
+The public **Gallery** and **Album** pages are PHP files in the project root:
+
+```text
+gallery.php                 # all photographs, album filters, lightbox
+album.php?album=<name>      # one album, cinematic slideshow
+album.php?place=cox-bazar   # legacy journey-card link, mapped to the album name
+```
+
+Both define `APP_NO_SESSION` and read `gallery_photos` through `GalleryPhoto`. `album.php` prints a hidden data block that `js/script.js` uses to hydrate the existing cinematic slideshow, so there is only one slideshow implementation. Links in `index.html`, `about.html`, `albums.html`, the injected navbar/footer and the journey cards now point at `gallery.php` / `album.php`; the old `gallery.html` and `album.html` URLs redirect (`.htaccess` on Apache, meta-refresh elsewhere).
+
 ### Contact form → SQLite
 
 `api/contact.php` accepts JSON (preferred) or a normal form POST. Add a hidden anti-bot field and a status element to the form:
@@ -534,8 +575,8 @@ Contact responses use `201` on success, `419` for an expired CSRF token, `422` f
 | Password theft from DB | bcrypt via `password_hash()`; plain text is never stored. `password_needs_rehash()` upgrades older hashes on login. |
 | Brute force | 5 failures per username+IP in 15 minutes → temporary lockout; failures are recorded in SQLite; response timing is equalised for unknown usernames. |
 | Session hijacking / fixation | Session ID regenerated on login and logout; HttpOnly, SameSite=Lax cookie, `Secure` on HTTPS; idle (30 min) and absolute (2 h) timeouts; user-agent fingerprint check. |
-| Malicious uploads | Upload error checks, `is_uploaded_file()`, 5 MB cap, `finfo` MIME allow-list, `getimagesize()` validation, 60-megapixel cap, random filename, extension from the MIME map, PHP execution denied in `/uploads`. |
-| Path traversal on delete | `ImageUploader::delete()` only removes files that resolve directly inside `uploads/trips`. |
+| Malicious uploads | Upload error checks, `is_uploaded_file()`, 5 MB cap, `finfo` MIME allow-list, `getimagesize()` validation, 60-megapixel cap, random filename, extension from the MIME map, PHP execution denied in `/uploads`. Gallery batches are capped at 10 files and validated photo-by-photo. |
+| Path traversal on delete | `ImageUploader::delete()` only removes files that resolve directly inside the uploader's own directory (`uploads/trips` or `uploads/gallery`); seeded `/images` files are always ignored. |
 | Enumeration / information leaks | Generic login errors, `noindex` headers, no stack traces unless `APP_DEBUG` is true, session pages send `Cache-Control: no-store`. |
 | Clickjacking / MIME sniffing | `X-Frame-Options`, CSP `frame-ancestors`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`. |
 | Direct access to internals | `.htaccess` denies `config/`, `classes/`, `includes/`, all `*.sqlite` files, dotfiles and directory listings. `require`/`include` files also refuse direct access. |
@@ -666,12 +707,15 @@ The PHP location block must still pass `.php` files to PHP-FPM. Base URL auto-de
 | `classes/Validator.php` | Required / length / email / date rules |
 | `classes/ImageUploader.php` | Secure store, inspect and scoped delete |
 | `classes/Trip.php` | Trips CRUD, prepared search, pagination |
+| `classes/GalleryPhoto.php` | Gallery albums, captions, search, pagination |
 | `classes/Inquiry.php` | Inquiries CRUD, search, pagination |
 | `admin/partials/header.php` | Shell, sidebar, top bar, flash, page heading |
 | `admin/partials/footer.php` | Footer and script tags |
 | `admin/login.php` | Sign-in screen |
 | `admin/dashboard.php` | Overview |
 | `admin/trips/*` | Trip management |
+| `admin/gallery.php` | Gallery / album manager and batch upload |
+| `admin/gallery-delete.php` | Gallery delete endpoint (row + file) |
 | `admin/inquiries/*` | Inbox |
 | `admin/account.php` | Password change + security summary |
 | `api/trips.php` | Public JSON feed |
@@ -680,7 +724,7 @@ The PHP location block must still pass `.php` files to PHP-FPM. Base URL auto-de
 | `assets/contact-demo.js` | Vanilla-JS contact form demo used by `journeys.php` |
 | `database/setup.php` | Installer / password reset |
 | `admin/assets/admin.css` | Dashboard design system |
-| `admin/assets/admin.js` | Sidebar, confirms, upload preview, counters |
+| `admin/assets/admin.js` | Sidebar, confirms, single/multi upload previews, counters |
 
 ---
 

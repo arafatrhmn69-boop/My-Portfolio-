@@ -279,7 +279,7 @@
             ["home", "Home", "index.html"],
             ["about", "About", "about.html"],
             ["journeys", "Journeys", "albums.html"],
-            ["gallery", "Gallery", "gallery.html"],
+            ["gallery", "Gallery", "gallery.php"],
             ["skills", "Skills", "index.html#skills"],
             ["contact", "Contact", "index.html#contact"]
         ];
@@ -328,7 +328,7 @@
                         <ul class="footer-links">
                             <li><a href="about.html">About</a></li>
                             <li><a href="albums.html">Journeys</a></li>
-                            <li><a href="gallery.html">Gallery</a></li>
+                            <li><a href="gallery.php">Gallery</a></li>
                             <li><a href="index.html#contact">Contact</a></li>
                         </ul>
                     </div>
@@ -366,7 +366,7 @@
         const remote = remoteFor(slug, 0);
         return `
         <article class="journey-card-wrap" data-reveal style="--reveal-delay:${(index % 3) * 0.08}s">
-            <a class="journey-card" href="album.html?place=${esc(slug)}" aria-label="Explore ${esc(album.title)} journey">
+            <a class="journey-card" href="album.php?place=${esc(slug)}" aria-label="Explore ${esc(album.title)} journey">
                 <img src="${esc(album.thumbnail)}" data-local="${esc(album.thumbnail)}" data-remote="${esc(remote)}"
                      data-label="${esc(album.title)}" data-palette="${esc(slug)}"
                      alt="Travel photograph representing ${esc(album.title)}" loading="${index < 2 ? "eager" : "lazy"}" decoding="async">
@@ -412,7 +412,7 @@
             slug: slug, album: album, photo: album.photos[index % album.photos.length], index: index
         }));
         container.innerHTML = entries.map((entry, index) => `
-            <a class="featured-item" href="gallery.html#gallery-collection" aria-label="View ${esc(entry.album.title)} in the gallery" data-reveal style="--reveal-delay:${(index % 3) * 0.08}s">
+            <a class="featured-item" href="gallery.php#gallery-collection" aria-label="View ${esc(entry.album.title)} in the gallery" data-reveal style="--reveal-delay:${(index % 3) * 0.08}s">
                 <img src="${esc(entry.photo.image)}" data-local="${esc(entry.photo.image)}" data-remote="${esc(remoteFor(entry.slug, index))}"
                      data-label="${esc(entry.album.title)}" data-palette="${esc(entry.slug)}"
                      alt="${esc(entry.photo.title)} — ${esc(entry.album.title)}" loading="lazy" decoding="async">
@@ -424,7 +424,7 @@
     function miniJourneyMarkup(slug, index) {
         const album = journeys[slug];
         return `
-        <a class="mini-journey" href="album.html?place=${esc(slug)}" data-reveal style="--reveal-delay:${index * 0.08}s" aria-label="Continue to ${esc(album.title)}">
+        <a class="mini-journey" href="album.php?place=${esc(slug)}" data-reveal style="--reveal-delay:${index * 0.08}s" aria-label="Continue to ${esc(album.title)}">
             <img src="${esc(album.thumbnail)}" data-local="${esc(album.thumbnail)}" data-remote="${esc(remoteFor(slug, 0))}"
                  data-label="${esc(album.title)}" data-palette="${esc(slug)}"
                  alt="Thumbnail for ${esc(album.title)}" loading="lazy" decoding="async">
@@ -650,6 +650,37 @@
     }
 
     /* --------------------------------------------------------
+       DATABASE-BACKED ALBUM DATA
+       album.php prints this block from gallery_photos. Adding it to the
+       journeys object lets the existing cinematic slideshow render the
+       live archive without duplicating the slideshow logic.
+       -------------------------------------------------------- */
+    function hydrateDatabaseAlbum() {
+        const data = document.getElementById("album-db-data");
+        if (!data) return;
+
+        const slug = data.dataset.albumSlug;
+        const photos = $$("[data-photo]", data).map(node => ({
+            title: node.dataset.title || "Untitled frame",
+            story: node.dataset.story || "",
+            date: node.dataset.date || "",
+            image: node.dataset.image || "",
+            location: node.dataset.location || data.dataset.albumTitle || ""
+        }));
+
+        if (!slug || !photos.length) return;
+
+        journeys[slug] = {
+            title: data.dataset.albumTitle || "Travel Album",
+            year: data.dataset.albumYear || "",
+            region: data.dataset.albumRegion || "Personal archive",
+            description: data.dataset.albumDescription || "",
+            thumbnail: photos[0].image,
+            photos: photos
+        };
+    }
+
+    /* --------------------------------------------------------
        CINEMATIC ALBUM SLIDESHOW
        -------------------------------------------------------- */
     function initSlideshow() {
@@ -657,7 +688,7 @@
         if (!stage) return;
 
         const params = new URLSearchParams(window.location.search);
-        const slug = params.get("place") || "cox-bazar";
+        const slug = params.get("place") || stage.dataset.albumSlug || "cox-bazar";
         const album = journeys[slug];
         const notFound = $("#album-not-found");
         const experience = $("#album-experience");
@@ -706,14 +737,14 @@
 
         if (storyList) {
             storyList.innerHTML = photos.map((photo, index) => `
-                <button class="story-entry${index === 0 ? " active" : ""}" type="button" data-slide-index="${index}">
+                <a class="story-entry${index === 0 ? " active" : ""}" href="#album-stage" data-slide-index="${index}">
                     <span>FRAME ${pad(index + 1)} &middot; ${esc(photo.date)}</span>
                     <h3>${esc(photo.title)}</h3>
                     <p>${esc(photo.story)}</p>
-                </button>`).join("");
+                </a>`).join("");
         }
 
-        renderMiniJourneys(slug);
+        if (!document.getElementById("album-db-data")) renderMiniJourneys(slug);
 
         function sourceFor(index) {
             const photo = photos[index];
@@ -861,13 +892,136 @@
         return entries;
     }
 
+    function initDatabaseGallery(grid, filters, count, lightbox) {
+        const items = $$(".gallery-item[data-gallery-entry]", grid);
+        if (!items.length) return;
+
+        const entries = items.map((element, index) => ({
+            index: index,
+            element: element,
+            album: element.dataset.album || "",
+            title: element.dataset.title || "Untitled frame",
+            story: element.dataset.story || "",
+            date: element.dataset.date || "",
+            image: element.dataset.image || (element.querySelector("img")?.getAttribute("src") || "")
+        }));
+
+        let visibleEntries = entries.slice();
+        let lightboxPosition = 0;
+        let imageToken = 0;
+        let lastFocused = null;
+
+        function updateCount() {
+            if (count) {
+                count.textContent = `${pad(visibleEntries.length)} photograph${visibleEntries.length === 1 ? "" : "s"}`;
+            }
+        }
+
+        function applyFilter(filter) {
+            visibleEntries = filter === "all" ? entries.slice() : entries.filter(entry => entry.album === filter);
+
+            $$(".filter-btn", filters || document).forEach(button => {
+                const isActive = button.dataset.filter === filter;
+                button.classList.toggle("active", isActive);
+                button.setAttribute("aria-pressed", String(isActive));
+            });
+
+            entries.forEach(entry => {
+                const show = filter === "all" || entry.album === filter;
+                entry.element.hidden = !show;
+
+                if (show) {
+                    entry.element.classList.remove("gallery-enter");
+                    void entry.element.offsetWidth;
+                    entry.element.classList.add("gallery-enter");
+                }
+            });
+
+            updateCount();
+        }
+
+        filters?.addEventListener("click", event => {
+            const button = event.target.closest("[data-filter]");
+            if (button) applyFilter(button.dataset.filter);
+        });
+
+        function setLightboxImage(src, alt) {
+            const image = $("#lightbox-image");
+            if (!image) return;
+            const token = ++imageToken;
+            resolveImage(src, "", alt, "default").then(resolved => {
+                if (token !== imageToken || !lightbox || !lightbox.classList.contains("is-open")) return;
+                image.src = resolved;
+                image.alt = alt;
+            });
+        }
+
+        function showLightbox(position) {
+            if (!visibleEntries.length || !lightbox) return;
+            lightboxPosition = (position + visibleEntries.length) % visibleEntries.length;
+            const entry = visibleEntries[lightboxPosition];
+
+            setLightboxImage(entry.image, `${entry.title} — ${entry.album}`);
+            setText("#lightbox-place", entry.album);
+            setText("#lightbox-title", entry.title);
+            setText("#lightbox-story", entry.story);
+            setText("#lightbox-date", entry.date);
+            setText("#lightbox-number", pad(lightboxPosition + 1));
+            setText("#lightbox-total", pad(visibleEntries.length));
+        }
+
+        function openLightbox(entryIndex) {
+            if (!lightbox) return;
+            lastFocused = document.activeElement;
+            lightbox.inert = false;
+            lightbox.classList.add("is-open");
+            lightbox.setAttribute("aria-hidden", "false");
+            document.body.style.overflow = "hidden";
+            const position = visibleEntries.findIndex(entry => entry.index === entryIndex);
+            showLightbox(position >= 0 ? position : 0);
+            $("#lightbox-close")?.focus();
+        }
+
+        function closeLightbox() {
+            if (!lightbox || !lightbox.classList.contains("is-open")) return;
+            lightbox.classList.remove("is-open");
+            lightbox.setAttribute("aria-hidden", "true");
+            lightbox.inert = true;
+            document.body.style.overflow = "";
+            if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
+        }
+
+        grid.addEventListener("click", event => {
+            const item = event.target.closest("[data-gallery-entry]");
+            if (item) openLightbox(Number(item.dataset.index));
+        });
+        $('[data-lightbox="prev"]')?.addEventListener("click", () => showLightbox(lightboxPosition - 1));
+        $('[data-lightbox="next"]')?.addEventListener("click", () => showLightbox(lightboxPosition + 1));
+        $("[data-lightbox-close]")?.addEventListener("click", closeLightbox);
+        lightbox?.addEventListener("click", event => { if (event.target === lightbox) closeLightbox(); });
+        document.addEventListener("keydown", event => {
+            if (!lightbox || !lightbox.classList.contains("is-open")) return;
+            if (event.key === "Escape") { event.preventDefault(); closeLightbox(); }
+            else if (event.key === "ArrowRight") { event.preventDefault(); showLightbox(lightboxPosition + 1); }
+            else if (event.key === "ArrowLeft") { event.preventDefault(); showLightbox(lightboxPosition - 1); }
+        });
+
+        updateCount();
+    }
+
     function initGallery() {
         const grid = $("#gallery-grid");
         if (!grid) return;
-        const entries = getGalleryEntries();
         const filters = $("#gallery-filters");
         const count = $("#gallery-count");
         const lightbox = $("#lightbox");
+
+        if (grid.dataset.gallerySource === "database") {
+            initDatabaseGallery(grid, filters, count, lightbox);
+            return;
+        }
+
+        const entries = getGalleryEntries();
         let visibleEntries = entries.slice();
         let lightboxPosition = 0;
         let lightboxToken = 0;
@@ -944,6 +1098,7 @@
         function openLightbox(globalIndex) {
             if (!lightbox) return;
             lastFocused = document.activeElement;
+            lightbox.inert = false;
             lightbox.classList.add("is-open");
             lightbox.setAttribute("aria-hidden", "false");
             document.body.style.overflow = "hidden";
@@ -955,6 +1110,7 @@
             if (!lightbox || !lightbox.classList.contains("is-open")) return;
             lightbox.classList.remove("is-open");
             lightbox.setAttribute("aria-hidden", "true");
+            lightbox.inert = true;
             document.body.style.overflow = "";
             if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
         }
@@ -1011,6 +1167,7 @@
         initScrollEffects();
         initProfileTilt();
         initCursor();
+        hydrateDatabaseAlbum();
         initSlideshow();
         initGallery();
         initContactForm();

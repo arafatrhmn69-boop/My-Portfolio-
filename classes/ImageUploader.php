@@ -27,6 +27,44 @@ final class ImageUploader
     }
 
     /**
+     * Normalise a $_FILES entry into a list of single-file arrays.
+     * Works for both `image` and `photos[]` style inputs.
+     *
+     * @param array<string, mixed>|null $files
+     * @return array<int, array{name: string, type: string, tmp_name: string, error: int, size: int}>
+     */
+    public static function normaliseFiles(?array $files): array
+    {
+        if ($files === null || !isset($files['name'])) {
+            return [];
+        }
+
+        if (!is_array($files['name'])) {
+            return [[
+                'name'     => (string) ($files['name'] ?? ''),
+                'type'     => (string) ($files['type'] ?? ''),
+                'tmp_name' => (string) ($files['tmp_name'] ?? ''),
+                'error'    => (int) ($files['error'] ?? UPLOAD_ERR_NO_FILE),
+                'size'     => (int) ($files['size'] ?? 0),
+            ]];
+        }
+
+        $normalised = [];
+
+        foreach (array_keys($files['name']) as $index) {
+            $normalised[] = [
+                'name'     => (string) ($files['name'][$index] ?? ''),
+                'type'     => (string) ($files['type'][$index] ?? ''),
+                'tmp_name' => (string) ($files['tmp_name'][$index] ?? ''),
+                'error'    => (int) ($files['error'][$index] ?? UPLOAD_ERR_NO_FILE),
+                'size'     => (int) ($files['size'][$index] ?? 0),
+            ];
+        }
+
+        return $normalised;
+    }
+
+    /**
      * Move an uploaded image into the upload directory.
      *
      * @param array<string, mixed>|null $file A single entry from $_FILES.
@@ -73,7 +111,7 @@ final class ImageUploader
         }
 
         if (!is_dir($this->directory) && !mkdir($this->directory, 0775, true) && !is_dir($this->directory)) {
-            $error = 'The upload directory is not writable. Check permissions on /uploads/trips.';
+            $error = 'The upload directory is not writable. Check the permissions on /uploads.';
 
             return null;
         }
@@ -82,7 +120,7 @@ final class ImageUploader
         $target = rtrim($this->directory, '/') . '/' . $filename;
 
         if (!move_uploaded_file($tmpPath, $target)) {
-            $error = 'The image could not be saved. Check permissions on /uploads/trips.';
+            $error = 'The image could not be saved. Check the permissions on /uploads.';
 
             return null;
         }

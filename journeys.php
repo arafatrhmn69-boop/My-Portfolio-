@@ -183,7 +183,7 @@ $pageTitle = 'Journeys · ' . APP_NAME;
             <nav class="demo-nav" aria-label="Demo navigation">
                 <a href="<?= e(url('index.html')) ?>">Home</a>
                 <a href="<?= e(url('albums.html')) ?>">Albums</a>
-                <a href="<?= e(url('gallery.html')) ?>">Gallery</a>
+                <a href="<?= e(url('gallery.php')) ?>">Gallery</a>
                 <a class="demo-admin" href="<?= e(admin_url('login.php')) ?>">Admin</a>
             </nav>
         </div>

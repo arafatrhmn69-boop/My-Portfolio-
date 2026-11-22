@@ -4,20 +4,21 @@ A premium, cinematic personal travel portfolio for a **student + aspiring web de
 
 > Every Place Has a Story. Every Journey Becomes a Memory.
 
-Built with **HTML5, CSS3, Bootstrap 5 and Vanilla JavaScript only**. No React, Next.js, Vue, Angular, Tailwind, TypeScript or build tools. No backend is required for the public site.
+Built with **HTML5, CSS3, Bootstrap 5 and Vanilla JavaScript only**. No React, Next.js, Vue, Angular, Tailwind, TypeScript or build tools. The homepage, About and Journeys pages are static; the **Gallery, Album and admin pages** are plain PHP 8 + SQLite (no framework).
 
-An optional **PHP 8 + SQLite admin panel** is included for managing journeys and contact messages. It lives in `admin/`, `classes/`, `config/`, `database/` and `api/`, and requires PHP hosting. See [`ADMIN-PANEL.md`](ADMIN-PANEL.md) for installation, architecture, the public integration snippets and the security model.
+An optional **PHP 8 + SQLite admin panel** is included for managing journeys, gallery albums and contact messages. It lives in `admin/`, `classes/`, `config/`, `database/` and `api/`, and requires PHP hosting. The public **Gallery** and **Album** pages (`gallery.php`, `album.php`) are rendered from the same SQLite database, so every upload or deletion appears on the site immediately. See [`ADMIN-PANEL.md`](ADMIN-PANEL.md) for installation, architecture, the public integration snippets and the security model.
 
 ---
 
 ## 1. Run it in VS Code
 
-1. Install the **Live Server** extension in VS Code.
-2. Open this `travel-portfolio/` folder in VS Code.
-3. Right-click `index.html` → **Open with Live Server**.
-4. Use the navigation to visit About, Journeys, an Album and the Gallery.
+1. Install PHP 8+ with `pdo_sqlite` (XAMPP/MAMP, or any PHP host).
+2. Run `php database/setup.php` once, then `php -S localhost:8000`.
+3. Open **http://localhost:8000/index.html**.
 
-All internal links use relative paths. The Bootstrap CSS and optional remote placeholder photos need an internet connection; the custom CSS layouts and generated SVG photo fallbacks still work offline.
+The static HTML pages still work by double-clicking or with Live Server, but the **Gallery** and **Album** pages are now PHP: they read `gallery_photos` from SQLite. For those two pages (and the admin console), use the PHP server or a real PHP host. The legacy `gallery.html` and `album.html` URLs redirect to their PHP equivalents.
+
+All internal links use relative paths. Bootstrap CSS and the optional remote placeholder photos need an internet connection; the custom CSS layouts and generated SVG photo fallbacks still work offline.
 
 ---
 
@@ -28,13 +29,22 @@ travel-portfolio/
 ├── index.html          # Homepage: hero, journeys, quote, timeline, about, skills, featured gallery, contact
 ├── about.html          # Longer personal story
 ├── albums.html         # All seven editorial album cards
-├── album.html          # ONE reusable slideshow page: album.html?place=cox-bazar
-├── gallery.html        # Filterable masonry gallery and fullscreen lightbox
+├── album.php           # Cinematic album slideshow, rendered from SQLite gallery_photos
+├── gallery.php         # Filterable masonry gallery + fullscreen lightbox, rendered from SQLite
+├── album.html          # Legacy URL → redirects to album.php
+├── gallery.html        # Legacy URL → redirects to gallery.php
+│
+├── admin/              # PHP 8 admin console (trips, gallery, inquiries, account)
+├── classes/            # Database, models, auth, CSRF, validation, uploads
+├── config/             # Configuration and bootstrap
+├── database/           # Installer + auto-created SQLite database (git-ignored)
+├── uploads/gallery/    # Admin-uploaded gallery photographs (git-ignored)
 │
 ├── css/
 │   └── style.css       # All shared cinematic styling and responsive rules
 ├── js/
-│   └── script.js       # Album data, shared nav/footer, cards, slideshow, gallery, animations
+│   ├── script.js       # Nav/footer, cards, slideshow, gallery lightbox, animations
+│   └── theme-init.js   # External pre-paint theme + loader boot (CSP-safe)
 ├── images/
 │   ├── profile/
 │   ├── cox-bazar/
@@ -118,15 +128,17 @@ Recommended sizes: portraits around `900 × 1200px`, thumbnails around `1200 × 
 
 ## 5. How the album system works
 
-A card links to a URL such as:
+A journey card links to a URL such as:
 
 ```text
-album.html?place=cox-bazar
+album.php?place=cox-bazar
 ```
 
-`album.html` reads the `place` query parameter and loads that destination from the `journeys` object. Adding or editing an album does not require another HTML file.
+`album.php` maps the legacy `place` slug to an album name and renders that album's photographs from the SQLite `gallery_photos` table. The admin studio links directly with `album.php?album=Cox%27s+Bazar`. The shared `js/script.js` still supplies the journey cards, thumbnails and slideshow chrome; it hydrates the cinematic slideshow with the live database photographs.
 
-Each photo object has this shape:
+Photographs are added, grouped into albums and deleted from **Admin → Gallery / Albums**. No HTML edits or extra album files are required.
+
+The static `journeys` objects in `js/script.js` still describe the seven editorial cards and their thumbnail artwork. Each photo object has this shape:
 
 ```javascript
 {
@@ -156,7 +168,9 @@ The `createPhoto()` helper creates these objects consistently. Edit the `journey
 
 ## 6. Gallery
 
-`gallery.html` builds an editorial CSS-columns masonry from all album photos. Use the destination filters, then click any image to open the fullscreen lightbox. The lightbox shows the place, title, story, date and counter, and supports `←`, `→` and `Escape`. The lightbox navigates only through the currently filtered photographs.
+`gallery.php` builds an editorial CSS-columns masonry from every row in `gallery_photos`. Each upload gets an album name (free text), one optional caption for the batch and a randomly named file in `/uploads/gallery`. Use the album filters, then click any image to open the fullscreen lightbox. The lightbox shows the album, caption, date and counter, and supports `←`, `→` and `Escape`; it navigates only through the currently filtered photographs.
+
+Uploading or deleting a photograph in **Admin → Gallery / Albums** changes `gallery.php` and `album.php` immediately. Seeded starter photographs point at the existing `/images` folders and are never deleted from disk by the panel.
 
 ---
 
@@ -190,11 +204,12 @@ A real, working backend ships with this repository: `api/contact.php` stores mes
 
 - [ ] Home → About → Journeys → Gallery → Skills → Contact all open
 - [ ] Mobile navbar opens, closes and follows a link
-- [ ] Each journey card opens its matching `album.html?place=...`
+- [ ] Each journey card opens its matching `album.php?place=...`
 - [ ] Slideshow changes photo, title, story, date, counter and active thumbnail
 - [ ] Play/pause, arrows, fullscreen and keyboard shortcuts work
 - [ ] Gallery filters change the visible photographs and counter
 - [ ] Lightbox opens, navigates and closes with `Escape`
+- [ ] Admin uploads appear in `gallery.php` / `album.php`; deleting removes the photo and file
 - [ ] Contact form shows the frontend-only notice
 - [ ] No horizontal scrolling at desktop, tablet or mobile widths
 
@@ -211,8 +226,9 @@ Optional temporary travel/portrait placeholders are loaded from [Pexels](https:/
 The repository also contains a complete, secure admin console for the archive:
 
 - Session login with `password_hash()` / `password_verify()`, CSRF tokens and brute-force lockout
-- Dashboard totals for trips and inquiries
+- Dashboard totals for trips, inquiries and gallery photographs
 - Full CRUD for trips, including validated image uploads
+- A Gallery / Albums manager with multi-file uploads, album filters, search and file-deleting deletes
 - An inquiry inbox fed by the public contact form
 - A public JSON feed (`api/trips.php`), a contact endpoint (`api/contact.php`) and a server-rendered demo (`journeys.php`)
 - SQLite database created automatically by `database/setup.php`
