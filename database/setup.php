@@ -6,7 +6,7 @@ declare(strict_types=1);
  * ============================================================
  *  THE JOURNEY ARCHIVE — one-time installer
  * ============================================================
- *  Creates database/portfolio.sqlite, all four tables, the default
+ *  Creates database/portfolio.sqlite, all five tables, the default
  *  administrator and (optionally) seven starter trips.
  *
  *  Run from the project root:
@@ -109,9 +109,10 @@ if (!$isCli && $adminsBefore > 0) {
 // ---------------------------------------------------------------------------
 $adminCreated = Seeder::seedAdmin($pdo);
 $tripsCreated = $seedDemoTrips ? Seeder::seedTrips($pdo) : 0;
+$galleryCreated = $seedDemoTrips ? Seeder::seedGalleryPhotos($pdo) : 0;
 
 $tableCounts = [];
-foreach (['admins', 'trips', 'inquiries', 'login_attempts'] as $table) {
+foreach (['admins', 'trips', 'gallery_photos', 'inquiries', 'login_attempts'] as $table) {
     $tableCounts[$table] = (int) $pdo->query('SELECT COUNT(*) FROM ' . $table)->fetchColumn();
 }
 
@@ -131,6 +132,7 @@ if ($isCli) {
     echo '  Administrator: ' . DEFAULT_ADMIN_USERNAME
         . ($adminCreated ? ' (created now)' : ' (already existed)') . PHP_EOL;
     echo '  Demo trips:    ' . $tripsCreated . ' inserted' . PHP_EOL;
+    echo '  Gallery:       ' . $galleryCreated . ' starter photographs inserted' . PHP_EOL;
     echo PHP_EOL;
     echo '  Sign in:       ' . $loginUrl . PHP_EOL;
     echo '  IMPORTANT: use the password supplied with this project, then change it' . PHP_EOL;
@@ -183,7 +185,7 @@ if (!headers_sent()) {
                     </div>
                     <div>
                         <dt>Tables</dt>
-                        <dd>admins, trips, inquiries, login_attempts</dd>
+                        <dd>admins, trips, gallery_photos, inquiries, login_attempts</dd>
                     </div>
                     <div>
                         <dt>Administrator</dt>
@@ -192,6 +194,10 @@ if (!headers_sent()) {
                     <div>
                         <dt>Demo trips inserted</dt>
                         <dd><?= e((string) $tripsCreated) ?></dd>
+                    </div>
+                    <div>
+                        <dt>Gallery photographs inserted</dt>
+                        <dd><?= e((string) $galleryCreated) ?></dd>
                     </div>
                 </dl>
 

@@ -154,6 +154,103 @@
     });
 
     /* ----------------------------------------------------------
+       Multi-image preview for the gallery uploader
+       ---------------------------------------------------------- */
+    const previewUrls = new WeakMap();
+
+    function formatBytes(bytes) {
+        if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        return Math.max(1, Math.round(bytes / 1024)) + ' KB';
+    }
+
+    document.querySelectorAll('[data-multi-image-input]').forEach(function (input) {
+        const preview = document.getElementById(input.getAttribute('data-multi-image-input'));
+        if (!preview) return;
+
+        const box = input.closest('.upload-box');
+        const counter = box ? box.querySelector('[data-file-count]') : null;
+        const maxFiles = Number(input.getAttribute('data-max-files') || 10);
+        const maxBytes = Number(input.getAttribute('data-max-bytes') || 5 * 1024 * 1024);
+
+        input.addEventListener('change', function () {
+            const previous = previewUrls.get(input) || [];
+            previous.forEach(function (url) { URL.revokeObjectURL(url); });
+            previewUrls.set(input, []);
+            preview.replaceChildren();
+
+            const files = Array.prototype.slice.call(input.files || []);
+            const countLabel = function (count) {
+                return count + ' photograph' + (count === 1 ? '' : 's') + ' selected';
+            };
+
+            if (counter) {
+                counter.classList.remove('is-error');
+                counter.textContent = files.length === 0 ? 'No photographs selected.' : countLabel(files.length);
+            }
+
+            if (box) box.classList.remove('is-over-limit');
+
+            if (files.length === 0) return;
+
+            if (files.length > maxFiles) {
+                if (counter) {
+                    counter.textContent = 'Choose up to ' + maxFiles + ' at a time — this batch is too large and will be rejected.';
+                    counter.classList.add('is-error');
+                }
+                if (box) box.classList.add('is-over-limit');
+            }
+
+            const urls = [];
+            let oversized = 0;
+            let invalid = 0;
+
+            files.slice(0, maxFiles).forEach(function (file) {
+                const item = document.createElement('div');
+                item.className = 'gallery-file-preview__item';
+
+                if (!file.type || !file.type.startsWith('image/')) {
+                    invalid += 1;
+                    item.classList.add('is-oversize');
+                } else if (file.size > maxBytes) {
+                    oversized += 1;
+                    item.classList.add('is-oversize');
+                }
+
+                if (file.type && file.type.startsWith('image/')) {
+                    const image = document.createElement('img');
+                    const url = URL.createObjectURL(file);
+                    urls.push(url);
+                    image.src = url;
+                    image.alt = 'Preview of ' + file.name;
+                    image.loading = 'lazy';
+                    item.appendChild(image);
+                }
+
+                const name = document.createElement('span');
+                name.className = 'gallery-file-preview__name';
+                name.textContent = file.name + ' · ' + formatBytes(file.size);
+                name.title = file.name + ' (' + formatBytes(file.size) + ')';
+                item.appendChild(name);
+
+                preview.appendChild(item);
+            });
+
+            previewUrls.set(input, urls);
+
+            if (counter && (oversized > 0 || invalid > 0)) {
+                const problems = [];
+                if (oversized > 0) {
+                    problems.push(oversized + ' over ' + formatBytes(maxBytes));
+                }
+                if (invalid > 0) problems.push(invalid + ' not an image');
+                counter.textContent = countLabel(files.length) + ' — ' + problems.join(', ')
+                    + '. Those files will be rejected.';
+                counter.classList.add('is-error');
+            }
+        });
+    });
+
+    /* ----------------------------------------------------------
        Character counters
        ---------------------------------------------------------- */
     document.querySelectorAll('[data-counter-for]').forEach(function (counter) {

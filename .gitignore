@@ -12,9 +12,12 @@ database/*.sqlite-journal
 database/*.db
 database/.installed
 
-# Uploaded trip photographs belong on the server, not in Git.
+# Uploaded photographs belong on the server, not in Git.
 uploads/trips/*
 !uploads/trips/.gitkeep
+uploads/gallery/*
+!uploads/gallery/.gitkeep
+!uploads/gallery/.htaccess
 
 # OS / editor noise
 .DS_Store

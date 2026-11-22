@@ -45,6 +45,16 @@ final class Schema
             )'
         );
 
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS gallery_photos (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                album_name TEXT NOT NULL,
+                caption    TEXT NOT NULL DEFAULT \'\',
+                image_path TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime(\'now\'))
+            )'
+        );
+
         // Extra table used only for brute-force protection on the login form.
         $pdo->exec(
             'CREATE TABLE IF NOT EXISTS login_attempts (
@@ -57,6 +67,10 @@ final class Schema
 
         $pdo->exec('CREATE INDEX IF NOT EXISTS idx_trips_travel_date ON trips (travel_date DESC)');
         $pdo->exec('CREATE INDEX IF NOT EXISTS idx_inquiries_created_at ON inquiries (created_at DESC)');
+        $pdo->exec(
+            'CREATE INDEX IF NOT EXISTS idx_gallery_album ON gallery_photos (album_name COLLATE NOCASE)'
+        );
+        $pdo->exec('CREATE INDEX IF NOT EXISTS idx_gallery_created ON gallery_photos (created_at DESC)');
         $pdo->exec(
             'CREATE INDEX IF NOT EXISTS idx_login_attempts_lookup
              ON login_attempts (username, ip, attempted_at)'

@@ -12,10 +12,13 @@ Auth::requireLogin();
 
 $pdo = Database::connection();
 $tripModel = new Trip($pdo);
+$galleryModel = new GalleryPhoto($pdo);
 $inquiryModel = new Inquiry($pdo);
 
 $tripCount = $tripModel->count();
 $inquiryCount = $inquiryModel->count();
+$galleryCount = $galleryModel->count();
+$galleryAlbumCount = count($galleryModel->albums());
 $countryCount = $tripModel->countriesCount();
 $inquiriesThisMonth = $inquiryModel->countSince(gmdate('Y-m-01 00:00:00'));
 
@@ -30,6 +33,8 @@ $activePage = 'dashboard';
 
 $pageActions = '<a class="btn-line" href="' . e(url()) . '" target="_blank" rel="noopener">'
     . '<i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> View site</a>'
+    . '<a class="btn-line" href="' . e(admin_url('gallery.php')) . '">'
+    . '<i class="bi bi-images" aria-hidden="true"></i> Gallery</a>'
     . '<a class="btn-gold" href="' . e(admin_url('trips/create.php')) . '">'
     . '<i class="bi bi-plus-lg" aria-hidden="true"></i> Add trip</a>';
 
@@ -84,13 +89,16 @@ require __DIR__ . '/partials/header.php';
 
     <article class="stat-card">
         <div class="stat-card__top">
-            <span class="stat-card__label">Contact form</span>
-            <span class="stat-card__icon"><i class="bi bi-chat-square-text" aria-hidden="true"></i></span>
+            <span class="stat-card__label">Gallery photographs</span>
+            <span class="stat-card__icon"><i class="bi bi-images" aria-hidden="true"></i></span>
         </div>
-        <span class="stat-card__value"><?= $inquiryCount > 0 ? 'Live' : 'Ready' ?></span>
-        <p class="stat-card__note">Writing to the SQLite inquiries table</p>
-        <a class="stat-card__link" href="<?= e(admin_url('inquiries/index.php')) ?>">
-            <span>Open inbox</span>
+        <span class="stat-card__value"><?= e((string) $galleryCount) ?></span>
+        <p class="stat-card__note">
+            Across <strong><?= e((string) $galleryAlbumCount) ?></strong>
+            album<?= $galleryAlbumCount === 1 ? '' : 's' ?> · shown on the public gallery
+        </p>
+        <a class="stat-card__link" href="<?= e(admin_url('gallery.php')) ?>">
+            <span>Manage gallery</span>
         </a>
     </article>
 </div>
@@ -218,6 +226,9 @@ require __DIR__ . '/partials/header.php';
                 </p>
                 <a class="btn-line btn-sm-admin" href="<?= e(url('journeys.php')) ?>" target="_blank" rel="noopener">
                     <i class="bi bi-eye" aria-hidden="true"></i> Preview journeys.php
+                </a>
+                <a class="btn-line btn-sm-admin" href="<?= e(url('gallery.php')) ?>" target="_blank" rel="noopener">
+                    <i class="bi bi-images" aria-hidden="true"></i> Preview gallery.php
                 </a>
             </div>
             <div>

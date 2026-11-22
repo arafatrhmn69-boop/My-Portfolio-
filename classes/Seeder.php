@@ -9,6 +9,9 @@ declare(strict_types=1);
  *    admins table is empty. Existing accounts are never overwritten.
  *  - seedTrips(): inserts the seven existing journeys from the public
  *    site as starter content, only when the trips table is empty.
+ *  - seedGalleryPhotos(): inserts 28 starter photographs (four for each
+ *    of the seven albums) from the existing /images folders, only when
+ *    gallery_photos is empty.
  */
 final class Seeder
 {
@@ -120,6 +123,68 @@ final class Seeder
         }
 
         return count($trips);
+    }
+
+    public static function seedGalleryPhotos(PDO $pdo): int
+    {
+        if ((int) $pdo->query('SELECT COUNT(*) FROM gallery_photos')->fetchColumn() > 0) {
+            return 0;
+        }
+
+        $photos = [
+            ["Cox's Bazar", 'The Long Shore', 'images/cox-bazar/photo1.jpg'],
+            ["Cox's Bazar", 'Last Light', 'images/cox-bazar/photo2.jpg'],
+            ["Cox's Bazar", 'Feet in the Sand', 'images/cox-bazar/photo3.jpg'],
+            ["Cox's Bazar", 'Before Dark', 'images/cox-bazar/photo4.jpg'],
+            ['Teknaf', 'The Water Road', 'images/teknaf/photo1.jpg'],
+            ['Teknaf', 'River Light', 'images/teknaf/photo2.jpg'],
+            ['Teknaf', 'Green Channels', 'images/teknaf/photo3.jpg'],
+            ['Teknaf', 'Edge of Day', 'images/teknaf/photo4.jpg'],
+            ['Bandarban', 'Into the Hills', 'images/bandarban/photo1.jpg'],
+            ['Bandarban', 'Morning Mist', 'images/bandarban/photo2.jpg'],
+            ['Bandarban', 'A Green Distance', 'images/bandarban/photo3.jpg'],
+            ['Bandarban', 'The Climb', 'images/bandarban/photo4.jpg'],
+            ['Sylhet', 'After Rain', 'images/sylhet/photo1.jpg'],
+            ['Sylhet', 'Garden Path', 'images/sylhet/photo2.jpg'],
+            ['Sylhet', 'Tree Tunnel', 'images/sylhet/photo3.jpg'],
+            ['Sylhet', 'Open Green', 'images/sylhet/photo4.jpg'],
+            ['Sitakunda', 'The Trail', 'images/sitakunda/photo1.jpg'],
+            ['Sitakunda', 'Under the Canopy', 'images/sitakunda/photo2.jpg'],
+            ['Sitakunda', 'Hidden Water', 'images/sitakunda/photo3.jpg'],
+            ['Sitakunda', 'The Way Back', 'images/sitakunda/thumbnail.jpg'],
+            ['Akhilpur', 'Patenga Shore', 'images/akhilpur/photo1.jpg'],
+            ['Akhilpur', 'Nets at Sunset', 'images/akhilpur/photo2.jpg'],
+            ['Akhilpur', 'Sea Air', 'images/akhilpur/photo3.jpg'],
+            ['Akhilpur', 'After the Tide', 'images/akhilpur/photo4.jpg'],
+            ['Guliakhali', 'Green Water', 'images/guliakhali/photo1.jpg'],
+            ['Guliakhali', 'Shoreline Birds', 'images/guliakhali/photo2.jpg'],
+            ['Guliakhali', 'Walking the Coast', 'images/guliakhali/photo3.jpg'],
+            ['Guliakhali', 'Sea and Sky', 'images/guliakhali/photo4.jpg'],
+        ];
+
+        $statement = $pdo->prepare(
+            'INSERT INTO gallery_photos (album_name, caption, image_path)
+             VALUES (:album_name, :caption, :image_path)'
+        );
+
+        $pdo->beginTransaction();
+
+        try {
+            foreach ($photos as [$albumName, $caption, $imagePath]) {
+                $statement->execute([
+                    ':album_name' => $albumName,
+                    ':caption'    => $caption,
+                    ':image_path' => $imagePath,
+                ]);
+            }
+
+            $pdo->commit();
+        } catch (Throwable $error) {
+            $pdo->rollBack();
+            throw $error;
+        }
+
+        return count($photos);
     }
 
     /**

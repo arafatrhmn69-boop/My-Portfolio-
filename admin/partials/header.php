@@ -11,7 +11,7 @@ declare(strict_types=1);
  *   $pageEyebrow   Small label above the heading
  *   $pageSubtitle  Supporting sentence under the heading
  *   $pageActions   Trusted HTML for the header buttons
- *   $activePage    dashboard | trips | inquiries | account
+ *   $activePage    dashboard | trips | gallery | inquiries | account
  */
 
 if (!defined('BASE_PATH')) {
@@ -32,8 +32,10 @@ $pageSubtitle = $pageSubtitle ?? '';
 $pageActions = $pageActions ?? '';
 $activePage = $activePage ?? '';
 
-$tripModel = new Trip(Database::connection());
-$inquiryModel = new Inquiry(Database::connection());
+$pdo = Database::connection();
+$tripModel = new Trip($pdo);
+$galleryModel = new GalleryPhoto($pdo);
+$inquiryModel = new Inquiry($pdo);
 
 $navItems = [
     [
@@ -49,6 +51,13 @@ $navItems = [
         'href'  => admin_url('trips/index.php'),
         'icon'  => 'bi-map',
         'count' => $tripModel->count(),
+    ],
+    [
+        'key'   => 'gallery',
+        'label' => 'Gallery / Albums',
+        'href'  => admin_url('gallery.php'),
+        'icon'  => 'bi-images',
+        'count' => $galleryModel->count(),
     ],
     [
         'key'   => 'inquiries',
