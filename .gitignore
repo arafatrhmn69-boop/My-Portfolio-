@@ -1,0 +1,26 @@
+# ---------------------------------------------------------------------------
+#  THE JOURNEY ARCHIVE — ignored files
+# ---------------------------------------------------------------------------
+
+# Local SQLite database created by `php database/setup.php`.
+# It contains real inquiries and password hashes: never commit it.
+database/*.sqlite
+database/*.sqlite3
+database/*.sqlite-wal
+database/*.sqlite-shm
+database/*.sqlite-journal
+database/*.db
+database/.installed
+
+# Uploaded trip photographs belong on the server, not in Git.
+uploads/trips/*
+!uploads/trips/.gitkeep
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.log
+*.bak
